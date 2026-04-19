@@ -848,13 +848,12 @@ async function csEnrichChunk(uid, ci) {
 
   try {
     var response = await callClaudeChat(chunk.content);
-    var jsonStr = (response.raw || '').trim();
-    jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-    var data = JSON.parse(jsonStr);
+    var data = response;
     var enriched = Object.assign({}, chunk, {
       enrichment: {
         status: 'enriched', enrichedAt: new Date().toISOString(), error: null,
         data: {
+          lang: data.lang || 'fr',
           objectives: Array.isArray(data.objectives) ? data.objectives : [],
           concepts: Array.isArray(data.concepts) ? data.concepts : [],
           takeaways: Array.isArray(data.takeaways) ? data.takeaways : [],
