@@ -669,6 +669,8 @@ var CS_STATE = {
 var csActiveModule = null;
 var csLoading = false;
 var csLoadingMsg = "";
+var csEnriching = false;
+var csEnrichProgress = "";
 var csOpenUnits = new Set();
 var csEditingChunks = new Set();
 var csEditDrafts = {};
@@ -872,20 +874,46 @@ async function csEnrichChunk(uid, ci) {
 async function csEnrichUnit(unitId) {
   var unit = CS_STATE.units.find(function (u) { return u.id === unitId; });
   if (!unit) return;
+  var pending = unit.chunks.filter(function (c) { return (!c.enrichment || c.enrichment.status !== 'enriched') && c.content.length >= 50; });
+  var done = 0;
   for (var i = 0; i < unit.chunks.length; i++) {
     var c = unit.chunks[i];
-    if (c.enrichment && c.enrichment.status === 'enriched' || c.content.length < 50) continue;
+    if ((c.enrichment && c.enrichment.status === 'enriched') || c.content.length < 50) continue;
+    csEnrichProgress = "Enrichissement : " + (done + 1) + "/" + pending.length + " — " + unit.title;
+    csRender();
     await csEnrichChunk(unitId, i);
+    done++;
     await new Promise(function (r) { setTimeout(r, 500); });
   }
+  csEnrichProgress = "";
 }
 
 async function csEnrichAll() {
   var units = CS_STATE.units;
   if (!confirm('Enrichir tous les chunks de ' + units.length + ' unités ? Cela peut prendre plusieurs minutes.')) return;
+  csEnriching = true;
+  var totalPending = 0;
+  units.forEach(function (u) {
+    u.chunks.forEach(function (c) {
+      if ((!c.enrichment || c.enrichment.status !== 'enriched') && c.content.length >= 50) totalPending++;
+    });
+  });
+  var done = 0;
   for (var idx = 0; idx < units.length; idx++) {
-    await csEnrichUnit(units[idx].id);
+    var u = units[idx];
+    for (var j = 0; j < u.chunks.length; j++) {
+      var chunk = u.chunks[j];
+      if ((chunk.enrichment && chunk.enrichment.status === 'enriched') || chunk.content.length < 50) continue;
+      csEnrichProgress = "Enrichissement global : " + (done + 1) + "/" + totalPending;
+      csRender();
+      await csEnrichChunk(u.id, j);
+      done++;
+      await new Promise(function (r) { setTimeout(r, 500); });
+    }
   }
+  csEnriching = false;
+  csEnrichProgress = "";
+  csRender();
 }
 
 /* Validation */
@@ -941,17 +969,22 @@ function csRenderTopBar() {
   return h("div", { className: "cs-topbar" },
     h("div", { className: "topbar-logo" }, "Content Studio"),
     h("div", { className: "topbar-sep" }),
-    h("div", { className: "topbar-title", style: { color: csHasData() ? "var(--surface)" : "rgba(255,255,255,.5)" } },
-      csHasData() ? CS_STATE.source.title : "Aucune source chargée"),
-    csHasData() ? [
+    csEnrichProgress ? [
+      h("div", { className: "topbar-title", style: { color: "var(--amber)" } },
+        h("span", { className: "enrich-spinner" }), " " + csEnrichProgress)
+    ] : [
+      h("div", { className: "topbar-title", style: { color: csHasData() ? "var(--surface)" : "rgba(255,255,255,.5)" } },
+        csHasData() ? CS_STATE.source.title : "Aucune source chargée")
+    ],
+    csEnrichProgress ? [] : (csHasData() ? [
       h("span", { className: "topbar-stat" }, CS_STATE.units.length + " unités"),
       h("span", { className: "topbar-stat" }, tc + " chunks"),
       h("span", { className: "topbar-stat" }, tw.toLocaleString() + " mots")
-    ] : [],
-    di, h("button", { className: "btn", onClick: function () { return di.click(); } }, "Importer .docx"),
+    ] : []),
+    csEnrichProgress ? [] : [di, h("button", { className: "btn", onClick: function () { return di.click(); } }, "Importer .docx"),
     ji, h("button", { className: "btn", onClick: function () { return ji.click(); } }, "Importer JSON"),
-    h("button", { className: "btn", disabled: !csHasData(), onClick: csEnrichAll, title: "Enrichir tous les chunks avec IA" }, "✦ Tout enrichir"),
-    h("button", { className: (csHasData() ? "btn btn-primary" : "btn"), disabled: !csHasData(), onClick: csDoExport }, "Exporter JSON")
+    h("button", { className: "btn", disabled: !csHasData() || csEnriching, onClick: csEnrichAll, title: "Enrichir tous les chunks avec IA" }, "✦ Tout enrichir"),
+    h("button", { className: (csHasData() ? "btn btn-primary" : "btn"), disabled: !csHasData() || csEnriching, onClick: csDoExport }, "Exporter JSON")]
   );
 }
 

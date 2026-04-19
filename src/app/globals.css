@@ -340,6 +340,7 @@ body:not([data-theme="dark"]) .nav-theme-btn .ic-moon{display:none}
 #cs-tab .type-remarque .chunk-type-badge{color:var(--ink-2);border:1px solid var(--line)}
 
 /* ── Enrichment ── */
+.enrich-spinner{width:10px;height:10px;border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .75s linear infinite;display:inline-block}
 #cs-tab .enrich-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:var(--f-mono)}
 #cs-tab .enrich-badge.idle{background:var(--paper-2);border:1px solid var(--line);color:var(--ink-3)}
 #cs-tab .enrich-badge.enriching{background:var(--amber-wash);border:1px solid rgba(160,107,31,.25);color:var(--amber)}
