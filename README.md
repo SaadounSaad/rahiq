@@ -1,67 +1,80 @@
 # Rahiq — Plateforme e-learning
 
-A content enrichment e-learning platform built with Next.js for deployment on Vercel.
+Une plateforme d'enrichissement de contenu pour l'e-learning, bâtie avec Next.js et déployée sur Vercel.
 
-## Features
+## Fonctionnalités
 
-- **OCR Document Processing** — Upload PDF or image files for OCR extraction via Mistral API
-- **Content Studio** — Manage structured course content with modules, units, and chunks
-- **AI Enrichment** — Automatically enrich content chunks with pedagogical metadata (objectives, concepts, takeaways, practical applications) via Anthropic Claude
-- **Arabic RTL Support** — Full support for Arabic course content
-- **Dark Mode** — Toggle between light and dark themes
-- **DOCX Export** — Export documents with table of contents
+| Module | Description |
+|--------|-------------|
+| **OCR Document** | Upload PDF/image → extraction OCR via Mistral API (mistral-ocr-latest) |
+| **Content Studio** | Importer un DOCX structuré → JSON avec modules/unités/chunks |
+| **Enrichissement IA** | Enrichir chaque chunk avec : objectifs, concepts clés, points clés, applications pratiques |
+| **Multilingue** | Détection automatique de la langue (ar/fr/en) — réponses dans la même langue |
+| **Progression** | Indicateur de progression en temps réel pendant l'enrichissement batch |
+| **Mode sombre** | Toggle clair/sombre |
+| **Export DOCX** | Export avec table des matières |
 
-## Tech Stack
+## Architecture
+
+```
+PDF/Image
+    ↓ (Mistral OCR)
+DOCX editable
+    ↓ (Content Studio)
+JSON (units/chunks)
+    ↓ (/api/enrich — Claude server-side)
+JSON enrichi (objectives, concepts, takeaways, practical_applications)
+```
+
+## Stack technique
 
 - **Framework**: Next.js 16 (App Router)
-- **Styling**: CSS with custom design tokens (warm palette, dark mode support)
+- **Styling**: CSS avec design tokens (palette chaude, mode sombre)
 - **Fonts**: Geist, Noto Naskh Arabic, Amiri, Source Serif 4
-- **OCR**: Mistral API (`mistral-ocr-latest`)
-- **AI**: Anthropic Claude API (`claude-sonnet-4-6`) — server-side
-- **External Libraries**: pdf.js, html-docx-js, marked, mammoth
+- **OCR**: Mistral API (`mistral-ocr-latest`) — côté client
+- **IA**: Anthropic Claude (`claude-sonnet-4-6`) — côté serveur (Vercel serverless)
+- **Librairies**: pdf.js, html-docx-js, marked, mammoth
 
-## Deployment
+## Structure du projet
 
-### 1. Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-cd rahiq-app
-vercel
+```
+rahiq-app/
+├── public/
+│   └── client.js           # JS côté client (OCR + Content Studio)
+├── src/
+│   └── app/
+│       ├── api/
+│       │   └── enrich/
+│       │       └── route.ts  # POST /api/enrich — proxy Claude
+│       ├── globals.css       # Tous les styles
+│       ├── layout.tsx        # Layout racine + fonts
+│       └── page.tsx          # Page principale (onglets React)
+├── vercel.json              # Config Vercel (région Paris)
+├── .env.local.example       # Template variables d'environnement
+└── README.md
 ```
 
-Or connect your GitHub repository to Vercel for automatic deployments.
+## Déploiement
 
-### 2. Environment Variables
+### Variables d'environnement sur Vercel
 
-Copy `.env.local.example` to `.env.local` and set your API keys:
+1. Aller sur **Settings → Environment Variables**
+2. Ajouter :
 
-```bash
-cp .env.local.example .env.local
-```
+| Nom | Valeur |
+|-----|--------|
+| `ANTHROPIC_API_KEY` | `sk-ant-votre-clé` |
 
-Edit `.env.local`:
-```
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-```
+3. **Redeploy** après ajout
 
-**Required API Keys:**
-- `ANTHROPIC_API_KEY` — For AI content enrichment (server-side, set in Vercel project settings)
+### Déployer depuis GitHub
 
-**Client-side (stored in browser localStorage):**
-- Mistral API key — Entered via the UI, stored locally in browser
+1. Connecter le dépôt `SaadounSaad/rahiq` à Vercel
+2. Vercel détecte automatiquement Next.js
+3. Ajouter `ANTHROPIC_API_KEY` dans les variables d'environnement
+4. Déployer
 
-### 3. Vercel Project Settings
-
-In your Vercel project dashboard:
-1. Go to **Settings → Environment Variables**
-2. Add `ANTHROPIC_API_KEY` with your Anthropic API key
-3. Deploy
-
-### 4. Build Locally
+### Build local
 
 ```bash
 npm install
@@ -69,50 +82,32 @@ npm run build
 npm start
 ```
 
-## Project Structure
-
-```
-rahiq-app/
-├── public/
-│   └── client.js          # Client-side JavaScript (Content Studio + OCR)
-├── src/
-│   └── app/
-│       ├── api/
-│       │   └── enrich/
-│       │       └── route.ts  # POST /api/enrich — Claude enrichment
-│       ├── globals.css    # All styles (tokens, dark mode, components)
-│       ├── layout.tsx     # Root layout with fonts
-│       └── page.tsx       # Main page (client component)
-├── vercel.json            # Vercel configuration (Paris region)
-├── .env.local.example     # Example environment variables
-└── README.md
-```
-
 ## API
 
 ### POST /api/enrich
 
-Enriches content with pedagogical metadata.
+Enrichit un chunk avec des métadonnées pédagogiques.
 
-**Request:**
+**Requête :**
 ```json
-{
-  "content": "Texte du chunk à analyser..."
-}
+{ "content": "Texte du chunk à analyser..." }
 ```
 
-**Response:**
+**Réponse :**
 ```json
 {
+  "lang": "fr",
   "objectives": ["Comprendre le concept de...", "Savoir appliquer..."],
   "concepts": [{"term": "Tawhid", "definition": "L'unicité de Dieu..."}],
   "takeaways": ["Point essentiel à retenir..."],
-  "practicalApplications": ["Application dans la vie quotidienne..."]
+  "applications": ["Application concrète..."]
 }
 ```
 
+La langue est détectée automatiquement (ar/fr/en) et la réponse est renvoyée dans la même langue.
+
 ## Notes
 
-- The Claude API key is **server-side only** — never exposed to the browser
-- The Mistral API key is entered via the UI and stored in browser localStorage
-- Content Studio imports `.docx` files structured with Heading 1 and Heading 2 styles
+- La clé API Claude est **côté serveur uniquement** — jamais exposée au navigateur
+- La clé Mistral est entrée via l'UI et stockée dans localStorage
+- Content Studio importe des fichiers `.docx` structurés avec les styles Heading 1 et Heading 2
