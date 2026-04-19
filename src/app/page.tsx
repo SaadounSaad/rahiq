@@ -1,13 +1,16 @@
 "use client";
 
 import Script from "next/script";
+import { useState } from "react";
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"ocr" | "cs">("ocr");
+
   return (
     <>
       <Script
         src="/client.js"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         onLoad={() => {
           console.log("Rahiq client.js loaded");
         }}
@@ -70,8 +73,16 @@ export default function Home() {
         </div>
         <div className="nav-sep"></div>
         <div className="nav-tabs">
-          <button className="nav-tab active" id="tab-ocr" onClick={() => { if (typeof switchTab === 'function') switchTab('ocr'); }}>OCR Document</button>
-          <button className="nav-tab" id="tab-cs" onClick={() => { if (typeof switchTab === 'function') switchTab('cs'); }}>Content Studio</button>
+          <button
+            className={`nav-tab ${activeTab === "ocr" ? "active" : ""}`}
+            id="tab-ocr"
+            onClick={() => setActiveTab("ocr")}
+          >OCR Document</button>
+          <button
+            className={`nav-tab ${activeTab === "cs" ? "active" : ""}`}
+            id="tab-cs"
+            onClick={() => setActiveTab("cs")}
+          >Content Studio</button>
         </div>
         <div className="nav-spacer"></div>
         <button className="nav-new-btn hidden" id="newAnalysisBtn">← Nouvelle analyse</button>
@@ -89,7 +100,7 @@ export default function Home() {
       </nav>
 
       {/* ===== TAB: OCR DOCUMENT ===== */}
-      <div id="ocr-tab" className="tab-panel active">
+      <div id="ocr-tab" className={`tab-panel ${activeTab === "ocr" ? "active" : ""}`}>
 
         {/* Upload section */}
         <div id="uploadSection" className="upload-section">
@@ -226,7 +237,7 @@ export default function Home() {
       </div>
 
       {/* ===== TAB: CONTENT STUDIO ===== */}
-      <div id="cs-tab" className="tab-panel">
+      <div id="cs-tab" className={`tab-panel ${activeTab === "cs" ? "active" : ""}`}>
         <div id="cs-app"></div>
       </div>
 
