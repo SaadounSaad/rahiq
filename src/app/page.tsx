@@ -1,21 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import Script from "next/script";
 
 export default function Home() {
-  useEffect(() => {
-    // Load the client script
-    const script = document.createElement("script");
-    script.src = "/client.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   return (
     <>
+      <Script
+        src="/client.js"
+        strategy="beforeInteractive"
+        onLoad={() => {
+          console.log("Rahiq client.js loaded");
+        }}
+      />
+
       {/* ===== API KEY MODAL (Mistral only — Claude enrichment is server-side) ===== */}
       <div className="modal-overlay hidden" id="apiKeyModal">
         <div className="ocr-modal">
