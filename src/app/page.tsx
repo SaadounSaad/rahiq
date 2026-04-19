@@ -70,8 +70,8 @@ export default function Home() {
         </div>
         <div className="nav-sep"></div>
         <div className="nav-tabs">
-          <button className="nav-tab active" id="tab-ocr">OCR Document</button>
-          <button className="nav-tab" id="tab-cs">Content Studio</button>
+          <button className="nav-tab active" id="tab-ocr" onClick={() => { if (typeof switchTab === 'function') switchTab('ocr'); }}>OCR Document</button>
+          <button className="nav-tab" id="tab-cs" onClick={() => { if (typeof switchTab === 'function') switchTab('cs'); }}>Content Studio</button>
         </div>
         <div className="nav-spacer"></div>
         <button className="nav-new-btn hidden" id="newAnalysisBtn">← Nouvelle analyse</button>
